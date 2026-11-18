@@ -124,6 +124,7 @@
     nao_encontrado: "Este pedido não foi encontrado. Recarregue a página.",
     dados: "Faltam dados obrigatórios do pedido. Confira o formulário.",
     rede: "Sem conexão com o portal agora. Confira sua internet e tente de novo.",
+    nao_cancelado: "Só dá para excluir pedidos cancelados. Cancele o pedido antes.",
     falha: "O portal não conseguiu salvar. Tente de novo em instantes."
   };
   function chamar(acao, extra, senha) {
@@ -408,6 +409,15 @@
     evs.forEach(function (e) { hist.append(el("li", { style: "--s:" + e.cor }, el("b", { text: e.n }), el("small", { text: dataHora(e.em) + (e.extra ? " · " + e.extra : "") }))); });
     corpo.append(el("div", { "class": "bloco" }, el("h4", { text: "Histórico" }), hist));
 
+    if (d.cancelado && emArke()) {
+      var confEx = el("div", { hidden: true, style: "display:flex;gap:8px;flex-wrap:wrap;align-items:center" },
+        el("span", { style: "font-size:14px;color:#FFD3D9", text: "Excluir de vez? Não dá para desfazer." }),
+        el("button", { "class": "botao pequeno perigo", type: "button", text: "Sim, excluir", onclick: function (e) { excluirPedido(id, e.currentTarget); } }),
+        el("button", { "class": "botao pequeno fantasma", type: "button", text: "Voltar", onclick: function () { confEx.hidden = true; btnEx.hidden = false; } }));
+      var btnEx = el("button", { "class": "botao pequeno perigo", type: "button", text: "Excluir pedido", style: "justify-self:start", onclick: function () { btnEx.hidden = true; confEx.hidden = false; } });
+      corpo.append(el("div", { "class": "bloco" }, el("h4", { text: "Excluir" }), el("p", { style: "font-size:14px;color:var(--tinta-2)", text: "Remove este pedido cancelado do portal e da planilha. Só a ARKE vê esta opção." }), btnEx, confEx));
+    }
+
     if (!d.cancelado && k === "recebido") {
       var conf = el("div", { hidden: true, style: "display:flex;gap:8px;flex-wrap:wrap;align-items:center" },
         el("span", { style: "font-size:14px;color:#FFD3D9", text: "Cancelar este pedido?" }),
@@ -476,6 +486,11 @@
       render();
     }, function (e) { aviso(textoErro(e), true); })
       .finally(function () { if (botao && botao.isConnected) { botao.disabled = false; botao.textContent = botao.dataset.t; } });
+  }
+  function excluirPedido(id, botao) {
+    botao.disabled = true; botao.textContent = "Excluindo…";
+    chamar("excluir", { id: id }).then(function () { fecharTudo(true); aviso("Pedido excluído."); render(); },
+      function (e) { aviso(textoErro(e), true); botao.disabled = false; botao.textContent = "Sim, excluir"; });
   }
   function cancelarPedido(id, botao) {
     botao.disabled = true;
