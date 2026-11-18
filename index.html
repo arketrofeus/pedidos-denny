@@ -181,6 +181,29 @@ main { padding: 0 var(--margem) 40px; }
 .busca input { width: min(260px, 70vw); padding: 10px 14px 10px 38px; border-radius: 999px; border: 1px solid var(--fio); background: rgba(255, 255, 255, .05); outline: none; transition: border-color .3s, box-shadow .3s; }
 .busca input:focus { border-color: rgba(124, 240, 255, .55); box-shadow: 0 0 0 4px rgba(63, 169, 245, .15); }
 .busca svg { position: absolute; left: 13px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--tinta-2); }
+.seletor { padding: 10px 36px 10px 16px; border-radius: 999px; border: 1px solid var(--fio); background: rgba(255, 255, 255, .05) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23A3AFD6' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 14px center; appearance: none; -webkit-appearance: none; cursor: pointer; font-size: 14px; font-weight: 600; outline: none; transition: border-color .3s, box-shadow .3s; }
+.seletor:focus, .seletor:hover { border-color: rgba(124, 240, 255, .55); }
+.seletor option { background: var(--marinho); }
+.seletor.ativo { border-color: var(--ciano); box-shadow: 0 0 16px rgba(124, 240, 255, .3); color: var(--ciano); }
+.torneio-tag { display: block; font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ciano); margin-bottom: 5px; text-shadow: 0 0 12px rgba(124, 240, 255, .45); }
+.torneios { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.torneio-opcao { position: relative; }
+.torneio-opcao input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.torneio-opcao label { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--fio); background: rgba(255, 255, 255, .04); cursor: pointer; font-family: var(--display); font-weight: 800; font-size: 19px; text-transform: uppercase; line-height: 1.05; color: var(--tinta-2); transition: border-color .3s, background .3s, color .3s, box-shadow .4s, transform .4s var(--mola); }
+.torneio-opcao label::before { content: ""; flex: none; width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .3); transition: all .3s; }
+.torneio-opcao label:hover { transform: translateY(-2px); border-color: rgba(124, 240, 255, .4); color: var(--tinta); }
+.torneio-opcao input:checked + label { color: var(--tinta); border-color: var(--ciano); background: linear-gradient(135deg, rgba(23, 70, 224, .35), rgba(42, 123, 255, .12)); box-shadow: 0 0 0 1px var(--ciano), 0 0 26px rgba(63, 169, 245, .35); }
+.torneio-opcao input:checked + label::before { border-color: #fff; background: var(--ciano); box-shadow: 0 0 12px var(--ciano); }
+.torneio-opcao input:focus-visible + label { outline: 2px solid var(--ciano); outline-offset: 3px; }
+.combo { position: relative; }
+.sugestoes { position: absolute; z-index: 6; top: 100%; left: 0; right: 0; margin: 6px 0 0; padding: 6px; list-style: none; border-radius: 16px; background: rgba(8, 14, 58, .98); border: 1px solid rgba(124, 240, 255, .32); box-shadow: 0 18px 50px rgba(0, 0, 20, .7), 0 0 30px rgba(42, 123, 255, .2); max-height: 300px; overflow-y: auto; }
+.sugestoes li { display: grid; gap: 2px; padding: 10px 12px; border-radius: 11px; cursor: pointer; transition: background .2s; }
+.sugestoes li strong { font-weight: 700; }
+.sugestoes li small { font-size: 12.5px; color: var(--tinta-2); }
+.sugestoes li:hover, .sugestoes li[aria-selected="true"] { background: rgba(42, 123, 255, .28); }
+.sugestoes .vazio-sug { cursor: default; color: var(--tinta-2); font-size: 13.5px; }
+.sugestoes .vazio-sug:hover { background: none; }
+.nota-jogador { color: var(--ok) !important; font-weight: 600; }
 
 /* Grupos de mês e cartões */
 .mes-grupo { margin-top: 26px; }
@@ -271,7 +294,7 @@ main { padding: 0 var(--margem) 40px; }
 .recado { padding: 14px 16px; border-radius: 14px; border-left: 3px solid var(--ciano); background: rgba(124, 240, 255, .07); white-space: pre-line; overflow-wrap: anywhere; }
 
 /* Formulários */
-.campo { display: grid; gap: 6px; }
+.campo { display: grid; gap: 6px; align-content: start; }
 .campo label, .campo .rotulo-campo { font-size: 13.5px; font-weight: 600; color: var(--tinta-2); }
 .campo label .obr { color: var(--ciano); }
 .campo input, .campo select, .campo textarea {
@@ -347,6 +370,7 @@ footer img { height: 22px; width: auto; opacity: .85; }
   .vazio { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
+  .torneios { grid-template-columns: 1fr; }
   .marca span { display: none; }
   .premios { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .duas, .tres { grid-template-columns: 1fr; }
@@ -417,6 +441,7 @@ footer img { height: 22px; width: auto; opacity: .85; }
       <h2 id="titulo-hist">Histórico de pedidos</h2>
       <div class="filtros">
         <div class="chips" id="chips" role="group" aria-label="Filtrar por situação"></div>
+        <select class="seletor" id="filtro-torneio" aria-label="Filtrar por torneio"><option value="">Todos os torneios</option></select>
         <div class="busca">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
           <input type="search" id="busca" placeholder="Buscar vencedor ou rastreio" aria-label="Buscar vencedor ou código de rastreio">
@@ -450,13 +475,17 @@ footer img { height: 22px; width: auto; opacity: .85; }
   </div>
   <form id="form" novalidate>
     <div class="secao-form">
+      <header><h3>Torneio</h3></header>
+      <div class="torneios" id="torneios" role="radiogroup" aria-label="Torneio"></div>
+    </div>
+    <div class="secao-form">
       <header><h3>Prêmio</h3></header>
       <div class="premios" id="premios"></div>
     </div>
     <div class="secao-form">
       <header><h3>Vencedor</h3></header>
       <div class="duas">
-        <div class="campo"><label for="f-nome">Nome do vencedor <span class="obr">*</span></label><input id="f-nome" name="nome" autocomplete="off" maxlength="120"></div>
+        <div class="campo"><label for="f-nome">Nome do vencedor <span class="obr">*</span></label><div class="combo"><input id="f-nome" name="nome" autocomplete="off" maxlength="120" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="lista-jogadores" placeholder="Digite para buscar um jogador"><ul class="sugestoes" id="lista-jogadores" role="listbox" aria-label="Jogadores já cadastrados" hidden></ul></div><span class="ajuda" id="nota-jogador">Quem já ganhou antes aparece na lista ao digitar.</span></div>
         <div class="campo"><label for="f-mes">Mês da premiação <span class="obr">*</span></label><input id="f-mes" name="mes" type="month"></div>
       </div>
       <div class="campo"><label for="f-gravacao">Texto da gravação</label><input id="f-gravacao" name="gravacao" maxlength="200" placeholder="Ex.: Campeão do Ranking de Novembro 2026"><span class="ajuda">O que vai escrito na peça, além do nome.</span></div>

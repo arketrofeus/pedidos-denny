@@ -15,6 +15,7 @@
     bronze: { nome: "Medalha de bronze", plural: "Medalhas de bronze", cor: "var(--bronze)", icone: "medalha" }
   };
   var ORDEM_TIPOS = ["trofeu", "ouro", "prata", "bronze"];
+  var CATEGORIAS = ["Torneio dos Campeões", "Supercopa dos Campeões", "SU Brazilian Challenge", "Challenge Light"];
   var ETAPAS = [
     { k: "recebido", n: "Recebido", cor: "var(--alerta)" },
     { k: "producao", n: "Em produção", cor: "var(--ceu)" },
@@ -29,7 +30,7 @@
   var estado = {
     senha: "", papel: null, dono: false, modo: "cliente",
     pedidos: new Map(), producao: new Map(), carregou: false, semConexao: false,
-    mesFoco: mesDe(new Date()), filtro: "todos", busca: "",
+    mesFoco: mesDe(new Date()), filtro: "todos", busca: "", torneio: "",
     aberto: null, editando: null, sujo: false, vistos: new Set(), ocupado: 0
   };
 
@@ -150,7 +151,7 @@
         codigo: p.codigo, mes: p.mes, tipo: p.tipo, nome: p.nome, gravacao: p.gravacao, contato: p.contato,
         destinatario: p.destinatario, cep: p.cep, rua: p.rua, complemento: p.complemento, bairro: p.bairro,
         cidade: p.cidade, uf: p.uf, obs: p.obs, criadoEm: p.criadoEm, editadoEm: p.editadoEm,
-        cancelado: p.cancelado === "sim", canceladoEm: p.canceladoEm
+        categoria: p.categoria, cancelado: p.cancelado === "sim", canceladoEm: p.canceladoEm
       });
       R.set(p.id, { status: p.status, transportadora: p.transportadora, rastreio: p.rastreio, link: p.link, previsao: p.previsao, recado: p.recado, historico: hist });
     });
@@ -275,7 +276,7 @@
     var abrir = function () { abrirGaveta(x.id); };
     c.addEventListener("click", function (e) { if (!e.target.closest("button")) abrir(); });
     c.addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " ") && e.target === c) { e.preventDefault(); abrir(); } });
-    var quem = el("div", { "class": "quem" }, el("strong", { text: txt(d.nome) }), el("small", { text: t.nome + (txt(d.codigo) ? " · " + txt(d.codigo) : "") }));
+    var quem = el("div", { "class": "quem" }, txt(d.categoria) ? el("span", { "class": "torneio-tag", text: txt(d.categoria) }) : null, el("strong", { text: txt(d.nome) }), el("small", { text: t.nome + (txt(d.codigo) ? " · " + txt(d.codigo) : "") }));
     var cab = el("div", { "class": "cabeca" }, medalhao(d.tipo), quem);
     if (emArke() && k === "recebido" && !d.cancelado) cab.append(el("span", { "class": "novo", text: "Novo" }));
     c.append(cab);
@@ -319,9 +320,10 @@
     var vis = todos.filter(function (x) {
       var s = etapaDe(x.id);
       if (f && f.f && (x.d.cancelado || !f.f(s))) return false;
+      if (estado.torneio && txt(x.d.categoria) !== estado.torneio) return false;
       if (q) {
         var r = estado.producao.get(x.id) || {};
-        var alvo = [x.d.nome, x.d.codigo, x.d.gravacao, r.rastreio].map(txt).join(" ").toLowerCase();
+        var alvo = [x.d.nome, x.d.codigo, x.d.gravacao, x.d.categoria, r.rastreio].map(txt).join(" ").toLowerCase();
         if (alvo.indexOf(q) < 0) return false;
       }
       return true;
@@ -364,7 +366,7 @@
     var k = etapaDe(id), r = estado.producao.get(id) || {}, t = TIPOS[d.tipo] || TIPOS.trofeu;
     $("gaveta-titulo").textContent = (txt(d.codigo) || "Pedido") + (mesValido(txt(d.mes)) ? " · " + (function () { var n = nomeMes(d.mes); return n.mes + " " + n.ano; })() : "");
 
-    corpo.append(el("div", { "class": "heroi-pedido" }, medalhao(d.tipo, true), el("div", null, el("h2", { text: txt(d.nome) }), el("p", { text: t.nome }))));
+    corpo.append(el("div", { "class": "heroi-pedido" }, medalhao(d.tipo, true), el("div", null, el("h2", { text: txt(d.nome) }), el("p", { text: t.nome + (txt(d.categoria) ? " · " + txt(d.categoria) : "") }))));
     if (d.cancelado) corpo.append(el("div", { "class": "faixa-aviso", text: "Pedido cancelado" + (d.canceladoEm ? " em " + soData(d.canceladoEm) : "") + "." }));
     else corpo.append(el("div", { "class": "bloco" }, el("div", { style: "display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap" }, el("h4", { text: "Situação", style: "margin:0;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--tinta-2)" }), pilula(k)), trilha(k)));
 
@@ -391,7 +393,7 @@
 
     var dl = el("dl", { "class": "dados" });
     function linha(n, v) { if (txt(v)) dl.append(el("dt", { text: n }), el("dd", { text: txt(v) })); }
-    linha("Prêmio", t.nome); linha("Vencedor", d.nome); linha("Gravação", d.gravacao); linha("Contato", d.contato); linha("Observações", d.obs);
+    linha("Torneio", d.categoria); linha("Prêmio", t.nome); linha("Vencedor", d.nome); linha("Gravação", d.gravacao); linha("Contato", d.contato); linha("Observações", d.obs);
     corpo.append(el("div", { "class": "bloco" }, el("h4", { text: "Dados do vencedor" }), dl));
     var end = [txt(d.destinatario), [txt(d.rua), txt(d.complemento)].filter(Boolean).join(", "), [txt(d.bairro), [txt(d.cidade), txt(d.uf).toUpperCase()].filter(Boolean).join(" / ")].filter(Boolean).join(" · "), txt(d.cep) ? "CEP " + txt(d.cep) : ""].filter(Boolean).join("\n");
     if (end) corpo.append(el("div", { "class": "bloco" }, el("h4", { text: "Entrega" }), el("p", { style: "white-space:pre-line;overflow-wrap:anywhere", text: end })));
@@ -506,6 +508,7 @@
     if (d) {
       CAMPOS.forEach(function (c) { var i = f.elements[c]; if (i) i.value = txt(d[c]); });
       var r = $("f-tipo-" + d.tipo); if (r) r.checked = true;
+      var ci = CATEGORIAS.indexOf(txt(d.categoria)); if (ci >= 0) $("f-cat-" + ci).checked = true;
     } else {
       $("f-mes").value = estado.mesFoco;
     }
@@ -514,13 +517,93 @@
     $("btn-salvar").textContent = d ? "Salvar alterações" : emArke() ? "Criar pedido" : "Enviar para a ARKE";
     if (estado.aberto) { $("gaveta").classList.remove("aberta"); $("gaveta").setAttribute("aria-hidden", "true"); estado.aberto = null; }
     $("veu").classList.add("aberto"); $("modal").classList.add("aberto"); $("modal").setAttribute("aria-hidden", "false");
-    setTimeout(function () { (d ? $("f-nome") : $("f-tipo-trofeu")).focus(); }, 80);
+    fecharSugestoes(); $("nota-jogador").textContent = AJUDA_NOME; $("nota-jogador").classList.remove("nota-jogador");
+    setTimeout(function () { (d ? $("f-nome") : $("f-cat-0")).focus(); }, 80);
   }
   $("usar-endereco").addEventListener("click", function () {
     var d = ultimoEndereco(estado.editando); if (!d) return;
     ENDERECO.forEach(function (c) { $("form").elements[c].value = txt(d[c]); });
     aviso("Endereço do último pedido preenchido.");
   });
+
+  /* ---------- jogadores já cadastrados (vêm dos pedidos anteriores) ---------- */
+  var AJUDA_NOME = "Quem já ganhou antes aparece na lista ao digitar.";
+  function chaveNome(s) { return txt(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " "); }
+  function jogadores() {
+    var m = new Map();
+    listaPedidos().forEach(function (x) {
+      var k = chaveNome(x.d.nome); if (!k) return;
+      var j = m.get(k) || { vitorias: 0 };
+      if (!x.d.cancelado) j.vitorias++;
+      j.d = x.d;
+      if (!x.d.cancelado && mesValido(txt(x.d.mes)) && (!j.ultimo || x.d.mes > j.ultimo)) j.ultimo = x.d.mes;
+      m.set(k, j);
+    });
+    return Array.from(m.values()).sort(function (a, b) { return txt(a.d.nome).localeCompare(txt(b.d.nome), "pt-BR"); });
+  }
+  var sug = { itens: [], ativo: -1 };
+  function abrirSugestoes() {
+    var q = chaveNome($("f-nome").value);
+    var todos = jogadores();
+    var lista = $("lista-jogadores"); lista.textContent = "";
+    if (!todos.length) { fecharSugestoes(); return; }
+    sug.itens = todos.filter(function (j) { return !q || chaveNome(j.d.nome).indexOf(q) >= 0; }).slice(0, 8);
+    sug.ativo = -1;
+    if (!sug.itens.length) {
+      lista.append(el("li", { "class": "vazio-sug", role: "option", "aria-disabled": "true", text: "Jogador novo. Preencha os dados uma vez e ele fica salvo para os próximos meses." }));
+    }
+    sug.itens.forEach(function (j, i) {
+      var local = [txt(j.d.cidade), txt(j.d.uf).toUpperCase()].filter(Boolean).join(" / ");
+      var info = [local, j.vitorias + (j.vitorias === 1 ? " vitória" : " vitórias"), j.ultimo ? "última em " + (function () { var n = nomeMes(j.ultimo); return n.mes.toLowerCase() + " " + n.ano; })() : ""].filter(Boolean).join(" · ");
+      lista.append(el("li", { role: "option", id: "jog-" + i, "aria-selected": "false",
+        onmousedown: function (e) { e.preventDefault(); escolherJogador(j); } }, el("strong", { text: txt(j.d.nome) }), el("small", { text: info })));
+    });
+    lista.hidden = false; $("f-nome").setAttribute("aria-expanded", "true");
+  }
+  function fecharSugestoes() {
+    $("lista-jogadores").hidden = true; $("f-nome").setAttribute("aria-expanded", "false"); $("f-nome").removeAttribute("aria-activedescendant"); sug.ativo = -1;
+  }
+  function marcarSugestao(i) {
+    var lis = $("lista-jogadores").querySelectorAll("li[role=option]:not(.vazio-sug)");
+    if (!lis.length) return;
+    sug.ativo = (i + lis.length) % lis.length;
+    Array.prototype.forEach.call(lis, function (li, k) { li.setAttribute("aria-selected", String(k === sug.ativo)); });
+    $("f-nome").setAttribute("aria-activedescendant", "jog-" + sug.ativo);
+    lis[sug.ativo].scrollIntoView({ block: "nearest" });
+  }
+  function escolherJogador(j) {
+    var f = $("form");
+    f.elements.nome.value = txt(j.d.nome);
+    ["contato"].concat(ENDERECO).forEach(function (c) { f.elements[c].value = txt(j.d[c]); });
+    Array.prototype.forEach.call(f.querySelectorAll(".invalido"), function (c) { c.classList.remove("invalido"); });
+    fecharSugestoes();
+    var nota = $("nota-jogador"); nota.textContent = "Dados de " + txt(j.d.nome) + " preenchidos. Confira o endereço antes de enviar."; nota.classList.add("nota-jogador");
+    $("f-gravacao").focus();
+  }
+  $("f-nome").addEventListener("focus", function () { if (!estado.editando) abrirSugestoes(); });
+  $("f-nome").addEventListener("input", function () {
+    var nota = $("nota-jogador"); nota.textContent = AJUDA_NOME; nota.classList.remove("nota-jogador");
+    abrirSugestoes();
+  });
+  $("f-nome").addEventListener("blur", function () { setTimeout(fecharSugestoes, 120); });
+  $("f-nome").addEventListener("keydown", function (e) {
+    var aberta = !$("lista-jogadores").hidden;
+    if (e.key === "ArrowDown") { e.preventDefault(); if (!aberta) abrirSugestoes(); marcarSugestao(sug.ativo + 1); }
+    else if (e.key === "ArrowUp" && aberta) { e.preventDefault(); marcarSugestao(sug.ativo - 1); }
+    else if (e.key === "Enter" && aberta && sug.ativo >= 0 && sug.itens[sug.ativo]) { e.preventDefault(); escolherJogador(sug.itens[sug.ativo]); }
+    else if (e.key === "Escape" && aberta) { e.preventDefault(); e.stopPropagation(); fecharSugestoes(); }
+  });
+
+  function montarTorneios() {
+    var t = $("torneios");
+    CATEGORIAS.forEach(function (n, i) {
+      t.append(el("div", { "class": "torneio-opcao" }, el("input", { type: "radio", name: "categoria", id: "f-cat-" + i, value: n }), el("label", { "for": "f-cat-" + i, text: n })));
+    });
+    var s = $("filtro-torneio");
+    CATEGORIAS.forEach(function (n) { s.append(el("option", { value: n, text: n })); });
+    s.addEventListener("change", function () { estado.torneio = s.value; s.classList.toggle("ativo", !!s.value); renderLista(); });
+  }
+
   $("f-cep").addEventListener("input", function (e) {
     var v = e.target.value.replace(/\D/g, "").slice(0, 8);
     e.target.value = v.length > 5 ? v.slice(0, 5) + "-" + v.slice(5) : v;
@@ -537,9 +620,11 @@
     OBRIG.forEach(function (c) { if (!dados[c]) { faltando.push(c); f.elements[c].closest(".campo").classList.add("invalido"); } });
     if (dados.cep && dados.cep.replace(/\D/g, "").length !== 8) { faltando.push("cep"); $("f-cep").closest(".campo").classList.add("invalido"); }
     if (dados.mes && !mesValido(dados.mes)) { faltando.push("mes"); $("f-mes").closest(".campo").classList.add("invalido"); }
+    var cat = f.querySelector("input[name=categoria]:checked");
+    if (!cat) { erro.textContent = "Escolha o torneio deste pedido."; erro.hidden = false; return; }
     if (!tipo) { erro.textContent = "Escolha o prêmio: troféu ou medalha de ouro, prata ou bronze."; erro.hidden = false; return; }
     if (faltando.length) { erro.textContent = "Preencha os campos marcados para a ARKE produzir e entregar a peça."; erro.hidden = false; var p = f.querySelector(".invalido input"); if (p) p.focus(); return; }
-    dados.tipo = tipo.value;
+    dados.tipo = tipo.value; dados.categoria = cat.value;
     salvarPedido(dados);
   });
   function salvarPedido(dados) {
@@ -579,6 +664,7 @@
 
   /* ---------- início ---------- */
   montarPremios();
+  montarTorneios();
   var salva = lerLocal(CHAVE);
   if (salva && API_URL) {
     $("entrar").hidden = true; $("area-portal").hidden = false; $("btn-sair").hidden = false;
